@@ -37,6 +37,8 @@ const state = {
   selectedSummonerId: "",
   itemTier: "starter",
   selectedItemId: "",
+  selectedSearchKey: "",
+  detailLang: "en",
 };
 
 const elements = {
@@ -46,10 +48,11 @@ const elements = {
   categoryTabs: document.getElementById("category-tabs"),
   resultsSummary: document.getElementById("results-summary"),
   resultsBar: document.getElementById("results-bar"),
-  resultsBody: document.getElementById("results-body"),
-  resultsCards: document.getElementById("results-cards"),
   emptyState: document.getElementById("empty-state"),
-  tableWrap: document.getElementById("table-wrap"),
+  searchView: document.getElementById("search-view"),
+  searchSummary: document.getElementById("search-summary"),
+  searchHits: document.getElementById("search-hits"),
+  searchDetail: document.getElementById("search-detail"),
   championView: document.getElementById("champion-view"),
   championGrid: document.getElementById("champion-grid"),
   championDetail: document.getElementById("champion-detail"),
@@ -63,8 +66,7 @@ const elements = {
   runeView: document.getElementById("rune-view"),
   runeGroups: document.getElementById("rune-groups"),
   runeDetail: document.getElementById("rune-detail"),
-  rowTemplate: document.getElementById("row-template"),
-  cardTemplate: document.getElementById("card-template"),
+  searchHitTemplate: document.getElementById("search-hit-template"),
   championTileTemplate: document.getElementById("champion-tile-template"),
   championDetailTemplate: document.getElementById("champion-detail-template"),
   itemTileTemplate: document.getElementById("item-tile-template"),
@@ -103,6 +105,7 @@ function applyPayload(payload) {
 
 function showLoadError(error) {
   document.body.classList.remove("landing");
+  setActiveView("error");
   elements.resultsSummary.textContent =
     "Could not load glossary data. Run generate_lol_glossary.py, or start the local server with serve.ps1.";
   elements.emptyState.textContent = String(error);
@@ -117,6 +120,9 @@ function bindEvents() {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       state.query = elements.searchInput.value.trim();
+      if (!state.query) {
+        state.selectedSearchKey = "";
+      }
       syncUrl();
       renderResults();
     }, 120);
@@ -124,11 +130,15 @@ function bindEvents() {
 
   elements.clearSearch.addEventListener("click", () => {
     state.query = "";
+    state.selectedSearchKey = "";
     elements.searchInput.value = "";
     syncUrl();
     renderResults();
     elements.searchInput.focus();
   });
+
+  window.addEventListener("scroll", hideHoverTip, true);
+  window.addEventListener("resize", hideHoverTip);
 }
 
 function readUrlState() {
@@ -141,6 +151,7 @@ function readUrlState() {
   state.selectedSummonerId = params.get("s") ?? "";
   state.itemTier = params.get("t") ?? "starter";
   state.selectedItemId = params.get("i") ?? "";
+  state.selectedSearchKey = params.get("e") ?? "";
 }
 
 function syncUrl() {
@@ -167,6 +178,9 @@ function syncUrl() {
     if (state.selectedItemId) {
       params.set("i", state.selectedItemId);
     }
+  }
+  if (!state.category && state.selectedSearchKey) {
+    params.set("e", state.selectedSearchKey);
   }
 
   const next = params.toString();
@@ -198,6 +212,9 @@ function renderTabs() {
         state.selectedItemId = "";
         state.itemTier = "starter";
       }
+      if (state.category) {
+        state.selectedSearchKey = "";
+      }
       syncUrl();
       renderTabs();
       renderResults();
@@ -212,9 +229,9 @@ function isLanding() {
 
 function hideContentViews() {
   setActiveView("");
-  elements.resultsBody.innerHTML = "";
-  elements.resultsCards.innerHTML = "";
-  elements.resultsSummary.textContent = "";
+  elements.searchHits.innerHTML = "";
+  elements.searchDetail.innerHTML = "";
+  elements.searchSummary.textContent = "";
   elements.emptyState.classList.remove("visible");
 }
 
@@ -223,13 +240,12 @@ function setActiveView(view) {
   elements.itemView.classList.toggle("hidden", view !== "item");
   elements.summonerView.classList.toggle("hidden", view !== "summoner");
   elements.runeView.classList.toggle("hidden", view !== "rune");
-  const showTable = view === "table";
-  elements.resultsBar.classList.toggle("hidden", !showTable);
-  elements.tableWrap.classList.toggle("hidden", !showTable);
-  elements.resultsCards.classList.toggle("champion-hidden", !showTable);
+  elements.searchView.classList.toggle("hidden", view !== "search");
+  elements.resultsBar.classList.toggle("hidden", view !== "error");
 }
 
 function renderResults() {
+  hideHoverTip();
   document.body.classList.toggle("landing", isLanding());
 
   if (isLanding()) {
@@ -257,19 +273,112 @@ function renderResults() {
     return;
   }
 
-  setActiveView("table");
+  renderSearchView();
+}
 
-  const filtered = filterEntries(state.entries, state.query, state.category);
-  elements.resultsBody.innerHTML = "";
-  elements.resultsCards.innerHTML = "";
+function entryKey(entry) {
+  return `${entry.category}:${entry.id}`;
+}
 
-  elements.resultsSummary.textContent = buildSummary(filtered.length);
+function renderSearchView() {
+  const filtered = filterEntries(state.entries, state.query).sort((a, b) =>
+    (a.en || "").localeCompare(b.en || "", "en"),
+  );
+
+  setActiveView("search");
+  elements.searchHits.innerHTML = "";
+  elements.searchDetail.innerHTML = "";
+
+  elements.searchSummary.textContent = buildSummary(filtered.length);
   elements.emptyState.classList.toggle("visible", filtered.length === 0);
 
-  for (const entry of filtered) {
-    elements.resultsBody.appendChild(createRow(entry));
-    elements.resultsCards.appendChild(createCard(entry));
+  if (
+    state.selectedSearchKey &&
+    !filtered.some((entry) => entryKey(entry) === state.selectedSearchKey)
+  ) {
+    state.selectedSearchKey = "";
+    syncUrl();
   }
+
+  for (const category of CATEGORIES) {
+    const hits = filtered.filter((entry) => entry.category === category.id);
+    if (hits.length === 0) {
+      continue;
+    }
+
+    const group = document.createElement("section");
+    group.className = "search-group";
+    group.setAttribute("aria-label", category.label);
+
+    const title = document.createElement("h2");
+    title.className = "search-group-title";
+    title.textContent = `${category.label} (${hits.length})`;
+    group.appendChild(title);
+
+    const list = document.createElement("div");
+    list.className = "search-group-list";
+    for (const entry of hits) {
+      list.appendChild(createSearchHit(entry));
+    }
+    group.appendChild(list);
+    elements.searchHits.appendChild(group);
+  }
+
+  const selected = filtered.find((entry) => entryKey(entry) === state.selectedSearchKey);
+  elements.searchDetail.classList.toggle("hidden", !selected);
+  if (selected) {
+    elements.searchDetail.appendChild(createSearchDetail(selected));
+    requestAnimationFrame(() => {
+      elements.searchDetail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }
+}
+
+function createSearchHit(entry) {
+  const fragment = elements.searchHitTemplate.content.cloneNode(true);
+  const card = fragment.querySelector(".search-hit");
+  const button = fragment.querySelector(".search-hit-main");
+  const chip = fragment.querySelector(".chip");
+
+  card.classList.toggle("selected", entryKey(entry) === state.selectedSearchKey);
+  chip.textContent = CATEGORY_LABELS[entry.category] ?? entry.category;
+  chip.className = `chip ${entry.category}`;
+  setIcon(fragment.querySelector(".search-hit-icon"), entry);
+  fragment.querySelector(".en").textContent = entry.en || "—";
+  fragment.querySelector(".ko").textContent = entry.ko || "—";
+  fragment.querySelector(".zh").textContent = entry.zh_TW || "—";
+
+  button.addEventListener("click", () => {
+    const key = entryKey(entry);
+    state.selectedSearchKey = state.selectedSearchKey === key ? "" : key;
+    syncUrl();
+    renderSearchView();
+  });
+
+  return card;
+}
+
+function createSearchDetail(entry) {
+  if (entry.category === "champion") {
+    return createChampionDetail(entry);
+  }
+  if (entry.category === "item") {
+    return createItemDetail(entry);
+  }
+  if (entry.category === "summoner_spell") {
+    return createSummonerDetail(entry);
+  }
+  return createRuneDetail(entry);
+}
+
+function closeDetail() {
+  if (!state.category) {
+    state.selectedSearchKey = "";
+    syncUrl();
+    renderSearchView();
+    return true;
+  }
+  return false;
 }
 
 function getChampions(query) {
@@ -282,8 +391,6 @@ function renderChampionView() {
   const champions = getChampions(state.query);
 
   setActiveView("champion");
-  elements.resultsBody.innerHTML = "";
-  elements.resultsCards.innerHTML = "";
 
   elements.emptyState.classList.toggle("visible", champions.length === 0);
 
@@ -343,8 +450,6 @@ function renderItemView() {
   );
 
   setActiveView("item");
-  elements.resultsBody.innerHTML = "";
-  elements.resultsCards.innerHTML = "";
 
   elements.emptyState.classList.toggle("visible", tierItems.length === 0);
 
@@ -397,7 +502,7 @@ function createItemTile(entry) {
 
   button.classList.toggle("selected", entry.id === state.selectedItemId);
   setIcon(icon, entry);
-  icon.title = entry.en || entry.id;
+  attachHoverTip(button, entry);
 
   button.addEventListener("click", () => {
     state.selectedItemId = state.selectedItemId === entry.id ? "" : entry.id;
@@ -417,10 +522,18 @@ function createItemDetail(entry) {
   fragment.querySelector(".item-detail-subtitle .ko").textContent = entry.ko || "—";
   fragment.querySelector(".item-detail-subtitle .zh").textContent = entry.zh_TW || "—";
 
-  const copyButton = fragment.querySelector(".copy-button");
-  copyButton.addEventListener("click", () => copyEntry(entry, copyButton));
+  const gold = fragment.querySelector(".item-gold");
+  if (entry.gold) {
+    gold.hidden = false;
+    gold.textContent = `${Number(entry.gold).toLocaleString("en-US")} gold`;
+  }
+
+  bindTooltip(card, entry);
 
   fragment.querySelector(".item-detail-close").addEventListener("click", () => {
+    if (closeDetail()) {
+      return;
+    }
     state.selectedItemId = "";
     syncUrl();
     renderItemView();
@@ -439,8 +552,6 @@ function renderSummonerView() {
   const spells = getSummonerSpells(state.query);
 
   setActiveView("summoner");
-  elements.resultsBody.innerHTML = "";
-  elements.resultsCards.innerHTML = "";
 
   elements.emptyState.classList.toggle("visible", spells.length === 0);
 
@@ -475,7 +586,7 @@ function createSummonerTile(entry) {
 
   button.classList.toggle("selected", entry.id === state.selectedSummonerId);
   setIcon(icon, entry);
-  icon.title = entry.en || entry.id;
+  attachHoverTip(button, entry);
 
   button.addEventListener("click", () => {
     state.selectedSummonerId = state.selectedSummonerId === entry.id ? "" : entry.id;
@@ -495,10 +606,10 @@ function createSummonerDetail(entry) {
   fragment.querySelector(".summoner-detail-subtitle .ko").textContent = entry.ko || "—";
   fragment.querySelector(".summoner-detail-subtitle .zh").textContent = entry.zh_TW || "—";
 
-  const copyButton = fragment.querySelector(".copy-button");
-  copyButton.addEventListener("click", () => copyEntry(entry, copyButton));
-
   fragment.querySelector(".summoner-detail-close").addEventListener("click", () => {
+    if (closeDetail()) {
+      return;
+    }
     state.selectedSummonerId = "";
     syncUrl();
     renderSummonerView();
@@ -522,8 +633,6 @@ function renderRuneView() {
   const runes = getRunes(state.query);
 
   setActiveView("rune");
-  elements.resultsBody.innerHTML = "";
-  elements.resultsCards.innerHTML = "";
 
   elements.emptyState.classList.toggle("visible", runes.length === 0);
 
@@ -588,7 +697,7 @@ function createRuneTile(entry) {
 
   button.classList.toggle("selected", entry.id === state.selectedRuneId);
   setIcon(icon, entry);
-  icon.title = entry.en || entry.id;
+  attachHoverTip(button, entry);
 
   button.addEventListener("click", () => {
     state.selectedRuneId = state.selectedRuneId === entry.id ? "" : entry.id;
@@ -608,10 +717,12 @@ function createRuneDetail(entry) {
   fragment.querySelector(".rune-detail-subtitle .ko").textContent = entry.ko || "—";
   fragment.querySelector(".rune-detail-subtitle .zh").textContent = entry.zh_TW || "—";
 
-  const copyButton = fragment.querySelector(".copy-button");
-  copyButton.addEventListener("click", () => copyEntry(entry, copyButton));
+  bindTooltip(card, entry);
 
   fragment.querySelector(".rune-detail-close").addEventListener("click", () => {
+    if (closeDetail()) {
+      return;
+    }
     state.selectedRuneId = "";
     syncUrl();
     renderRuneView();
@@ -627,7 +738,7 @@ function createChampionTile(entry) {
 
   button.classList.toggle("selected", entry.id === state.selectedChampionId);
   setIcon(icon, entry);
-  icon.title = entry.en || entry.id;
+  attachHoverTip(button, entry);
 
   button.addEventListener("click", () => {
     state.selectedChampionId =
@@ -658,10 +769,10 @@ function createChampionDetail(entry) {
     }
   }
 
-  const copyButton = fragment.querySelector(".copy-button");
-  copyButton.addEventListener("click", () => copyChampionEntry(entry, copyButton));
-
   fragment.querySelector(".champion-detail-close").addEventListener("click", () => {
+    if (closeDetail()) {
+      return;
+    }
     state.selectedChampionId = "";
     syncUrl();
     renderChampionView();
@@ -714,14 +825,40 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;");
 }
 
-function copyChampionEntry(entry, button) {
-  const lines = [[entry.en, entry.ko, entry.zh_TW].filter(Boolean).join(" / ")];
-  for (const spell of entry.spells ?? []) {
-    lines.push(
-      `${spell.key}: ${[spell.en, spell.ko, spell.zh_TW].filter(Boolean).join(" / ")}`,
-    );
+function localizedDesc(entry) {
+  return entry[`desc_${state.detailLang}`] || entry.desc_en || "";
+}
+
+function bindTooltip(card, entry) {
+  const tooltip = card.querySelector(".entry-tooltip");
+  const tabs = card.querySelector(".detail-lang-tabs");
+  if (!tooltip || !tabs) {
+    return;
   }
-  return copyText(lines.join("\n"), button);
+
+  const hasDesc = Boolean(entry.desc_en || entry.desc_ko || entry.desc_zh_TW);
+  if (!hasDesc) {
+    tabs.hidden = true;
+    tooltip.hidden = true;
+    return;
+  }
+
+  const render = () => {
+    tooltip.innerHTML = localizedDesc(entry);
+    tooltip.hidden = !tooltip.innerHTML;
+    for (const button of tabs.querySelectorAll("[data-lang]")) {
+      button.classList.toggle("active", button.dataset.lang === state.detailLang);
+    }
+  };
+
+  for (const button of tabs.querySelectorAll("[data-lang]")) {
+    button.addEventListener("click", () => {
+      state.detailLang = button.dataset.lang;
+      render();
+    });
+  }
+
+  render();
 }
 
 function buildSummary(resultCount) {
@@ -782,61 +919,52 @@ function setIcon(img, entry) {
   }
 }
 
-function createRow(entry) {
-  const fragment = elements.rowTemplate.content.cloneNode(true);
-  const row = fragment.querySelector("tr");
-  const chip = fragment.querySelector(".chip");
-
-  chip.textContent = CATEGORY_LABELS[entry.category] ?? entry.category;
-  chip.className = `chip ${entry.category}`;
-
-  setIcon(fragment.querySelector(".entry-icon"), entry);
-
-  fragment.querySelector(".en").textContent = entry.en || "—";
-  fragment.querySelector(".ko").textContent = entry.ko || "—";
-  fragment.querySelector(".zh").textContent = entry.zh_TW || "—";
-
-  const copyButton = fragment.querySelector(".copy-button");
-  copyButton.addEventListener("click", () => copyEntry(entry, copyButton));
-
-  return row;
+function hoverTipElement() {
+  let tip = document.getElementById("hover-tip");
+  if (!tip) {
+    tip = document.createElement("div");
+    tip.id = "hover-tip";
+    tip.hidden = true;
+    document.body.appendChild(tip);
+  }
+  return tip;
 }
 
-function createCard(entry) {
-  const fragment = elements.cardTemplate.content.cloneNode(true);
-  const chip = fragment.querySelector(".chip");
-
-  chip.textContent = CATEGORY_LABELS[entry.category] ?? entry.category;
-  chip.className = `chip ${entry.category}`;
-
-  setIcon(fragment.querySelector(".entry-icon"), entry);
-
-  fragment.querySelector(".en").textContent = entry.en || "—";
-  fragment.querySelector(".ko").textContent = entry.ko || "—";
-  fragment.querySelector(".zh").textContent = entry.zh_TW || "—";
-
-  const copyButton = fragment.querySelector(".copy-button");
-  copyButton.addEventListener("click", () => copyEntry(entry, copyButton));
-
-  return fragment.firstElementChild;
+function attachHoverTip(button, entry) {
+  const label = [entry.en, entry.ko, entry.zh_TW].filter(Boolean).join(" · ");
+  button.setAttribute("aria-label", label || entry.id);
+  button.addEventListener("mouseenter", () => showHoverTip(button, entry));
+  button.addEventListener("mouseleave", hideHoverTip);
+  button.addEventListener("focus", () => showHoverTip(button, entry));
+  button.addEventListener("blur", hideHoverTip);
+  button.addEventListener("click", hideHoverTip);
 }
 
-async function copyEntry(entry, button) {
-  const text = [entry.en, entry.ko, entry.zh_TW].filter(Boolean).join(" / ");
-  return copyText(text, button);
+function showHoverTip(anchor, entry) {
+  const tip = hoverTipElement();
+  tip.innerHTML = `
+    <strong>${escapeHtml(entry.en || "—")}</strong>
+    <span>${escapeHtml(entry.ko || "—")} · ${escapeHtml(entry.zh_TW || "—")}</span>
+  `;
+  tip.hidden = false;
+
+  const rect = anchor.getBoundingClientRect();
+  const gap = 10;
+  const tipRect = tip.getBoundingClientRect();
+  let left = rect.left + rect.width / 2 - tipRect.width / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
+  let top = rect.top - tipRect.height - gap;
+  if (top < 8) {
+    top = rect.bottom + gap;
+  }
+
+  tip.style.left = `${left}px`;
+  tip.style.top = `${top}px`;
 }
 
-async function copyText(text, button) {
-  try {
-    await navigator.clipboard.writeText(text);
-    button.textContent = "Copied";
-    button.classList.add("copied");
-    setTimeout(() => {
-      button.textContent = "Copy";
-      button.classList.remove("copied");
-    }, 1200);
-  } catch (error) {
-    button.textContent = "Failed";
-    console.error(error);
+function hideHoverTip() {
+  const tip = document.getElementById("hover-tip");
+  if (tip) {
+    tip.hidden = true;
   }
 }

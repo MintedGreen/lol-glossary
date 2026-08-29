@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LoL Glossary · EN / KO / 台灣中文</title>
-    <link rel="stylesheet" href="styles.css?v=20260829e" />
+    <link rel="stylesheet" href="styles.css?v=20260829i" />
   </head>
   <body class="landing">
     <div class="page">
@@ -38,7 +38,7 @@
       </header>
 
       <main class="main">
-        <div id="results-bar" class="results-bar">
+        <div id="results-bar" class="results-bar hidden">
           <p id="results-summary">Loading glossary…</p>
         </div>
 
@@ -63,23 +63,11 @@
           <div id="rune-detail" class="rune-detail hidden"></div>
         </section>
 
-        <div id="table-wrap" class="table-wrap">
-          <table class="results-table">
-            <thead>
-              <tr>
-                <th scope="col">Category</th>
-                <th scope="col"><span class="sr-only">Icon</span></th>
-                <th scope="col">English</th>
-                <th scope="col">Korean</th>
-                <th scope="col">台灣中文</th>
-                <th scope="col"><span class="sr-only">Copy</span></th>
-              </tr>
-            </thead>
-            <tbody id="results-body"></tbody>
-          </table>
-        </div>
-
-        <div id="results-cards" class="results-cards" aria-live="polite"></div>
+        <section id="search-view" class="search-view hidden" aria-label="Search results">
+          <p id="search-summary" class="search-summary"></p>
+          <div id="search-hits" class="search-hits"></div>
+          <div id="search-detail" class="search-detail hidden"></div>
+        </section>
 
         <p id="empty-state" class="empty-state hidden">No matches found.</p>
       </main>
@@ -92,19 +80,20 @@
       </footer>
     </div>
 
-    <template id="row-template">
-      <tr>
-        <td><span class="chip"></span></td>
-        <td>
-          <img class="entry-icon" alt="" loading="lazy" width="48" height="48" />
-        </td>
-        <td><span class="primary-text en"></span></td>
-        <td><span class="primary-text ko"></span></td>
-        <td><span class="primary-text zh"></span></td>
-        <td>
-          <button type="button" class="copy-button">Copy</button>
-        </td>
-      </tr>
+    <template id="search-hit-template">
+      <article class="search-hit">
+        <button type="button" class="search-hit-main">
+          <span class="chip"></span>
+          <img class="search-hit-icon" alt="" loading="lazy" width="48" height="48" />
+          <span class="search-hit-names">
+            <span class="en"></span>
+            <span class="sep">·</span>
+            <span class="ko"></span>
+            <span class="sep">·</span>
+            <span class="zh"></span>
+          </span>
+        </button>
+      </article>
     </template>
 
     <template id="champion-tile-template">
@@ -131,7 +120,6 @@
           <h3 class="champion-spells-title">Abilities</h3>
           <div class="champion-spells-list"></div>
         </section>
-        <button type="button" class="copy-button">Copy</button>
       </article>
     </template>
 
@@ -153,9 +141,15 @@
               <span class="sep">·</span>
               <span class="zh"></span>
             </p>
+            <p class="item-gold" hidden></p>
           </div>
         </div>
-        <button type="button" class="copy-button">Copy</button>
+        <div class="detail-lang-tabs" role="tablist" aria-label="Description language">
+          <button type="button" data-lang="en">EN</button>
+          <button type="button" data-lang="ko">한국어</button>
+          <button type="button" data-lang="zh_TW">繁體中文</button>
+        </div>
+        <div class="entry-tooltip"></div>
       </article>
     </template>
 
@@ -179,7 +173,6 @@
             </p>
           </div>
         </div>
-        <button type="button" class="copy-button">Copy</button>
       </article>
     </template>
 
@@ -203,28 +196,16 @@
             </p>
           </div>
         </div>
-        <button type="button" class="copy-button">Copy</button>
-      </article>
-    </template>
-
-    <template id="card-template">
-      <article class="result-card">
-        <div class="card-line">
-          <span class="chip"></span>
-          <img class="entry-icon" alt="" loading="lazy" width="48" height="48" />
-          <p class="card-names">
-            <span class="en"></span>
-            <span class="sep">·</span>
-            <span class="ko"></span>
-            <span class="sep">·</span>
-            <span class="zh"></span>
-          </p>
-          <button type="button" class="copy-button">Copy</button>
+        <div class="detail-lang-tabs" role="tablist" aria-label="Description language">
+          <button type="button" data-lang="en">EN</button>
+          <button type="button" data-lang="ko">한국어</button>
+          <button type="button" data-lang="zh_TW">繁體中文</button>
         </div>
+        <div class="entry-tooltip"></div>
       </article>
     </template>
 
-    <script src="data/glossary.js?v=20260829d"></script>
-    <script src="app.js?v=20260829e"></script>
+    <script src="data/glossary.js?v=16.17.1"></script>
+    <script src="app.js?v=20260829i"></script>
   </body>
 </html>

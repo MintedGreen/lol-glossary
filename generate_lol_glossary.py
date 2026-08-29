@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
+from html import escape as html_escape
+from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -18,6 +21,143 @@ LANGS = {
     "zh_TW": "zh_TW",
 }
 SPELL_KEYS = ["Q", "W", "E", "R"]
+
+TOOLTIP_VOID = {"br", "hr"}
+TOOLTIP_TAGS = {
+    "br": ("br", None),
+    "hr": ("hr", None),
+    "b": ("b", None),
+    "i": ("i", None),
+    "em": ("em", None),
+    "strong": ("strong", None),
+    "stats": ("div", "tt-stats"),
+    "attention": ("strong", "tt-num"),
+    "passive": ("strong", "tt-name"),
+    "active": ("strong", "tt-name"),
+    "unique": ("strong", "tt-name"),
+    "spellname": ("strong", "tt-name"),
+    "spellpassive": ("strong", "tt-name"),
+    "physicaldamage": ("span", "tt-phys"),
+    "magicdamage": ("span", "tt-magic"),
+    "truedamage": ("span", "tt-true"),
+    "healing": ("span", "tt-heal"),
+    "shield": ("span", "tt-shield"),
+    "status": ("span", "tt-status"),
+    "keyword": ("span", "tt-keyword"),
+    "keywordmajor": ("span", "tt-keyword"),
+    "keywordstealth": ("span", "tt-keyword"),
+    "onhit": ("span", "tt-keyword"),
+    "speed": ("span", "tt-keyword"),
+    "attackspeed": ("span", "tt-keyword"),
+    "lifesteal": ("span", "tt-keyword"),
+    "omnivamp": ("span", "tt-keyword"),
+    "armorpen": ("span", "tt-keyword"),
+    "ms": ("span", "tt-keyword"),
+    "gold": ("span", "tt-gold"),
+    "health": ("span", "tt-health"),
+    "scalearmor": ("span", "tt-stat"),
+    "scalemr": ("span", "tt-stat"),
+    "scalehealth": ("span", "tt-health"),
+    "scalemana": ("span", "tt-mana"),
+    "scalead": ("span", "tt-ad"),
+    "scaleap": ("span", "tt-ap"),
+    "scalelethality": ("span", "tt-stat"),
+    "scalelevel": ("span", "tt-stat"),
+    "scalecrit": ("span", "tt-stat"),
+    "rules": ("span", "tt-rules"),
+    "flavortext": ("em", "tt-flavor"),
+    "buffedstat": ("span", "tt-buff"),
+    "statgood": ("span", "tt-buff"),
+    "danger": ("span", "tt-danger"),
+    "li": ("div", "tt-li"),
+}
+
+
+class TooltipSanitizer(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.parts: list[str] = []
+        self.stack: list[str] = []
+        self.skip_depth = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        tag = tag.lower()
+        if tag in {"script", "style", "iframe", "object", "img"}:
+            self.skip_depth += 1
+            return
+        if self.skip_depth:
+            return
+        mapped = TOOLTIP_TAGS.get(tag)
+        if mapped is None:
+            return
+        name, class_name = mapped
+        if name in TOOLTIP_VOID:
+            self.parts.append(f"<{name}>")
+            return
+        attr = f' class="{class_name}"' if class_name else ""
+        self.parts.append(f"<{name}{attr}>")
+        self.stack.append(name)
+
+    def handle_endtag(self, tag: str) -> None:
+        tag = tag.lower()
+        if tag in {"script", "style", "iframe", "object", "img"}:
+            self.skip_depth = max(0, self.skip_depth - 1)
+            return
+        if self.skip_depth:
+            return
+        mapped = TOOLTIP_TAGS.get(tag)
+        if mapped is None:
+            return
+        name, _ = mapped
+        if name in TOOLTIP_VOID:
+            return
+        if self.stack and self.stack[-1] == name:
+            self.stack.pop()
+            self.parts.append(f"</{name}>")
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+        mapped = TOOLTIP_TAGS.get(tag.lower())
+        if mapped and mapped[0] not in TOOLTIP_VOID:
+            self.handle_endtag(tag)
+
+    def handle_data(self, data: str) -> None:
+        if not self.skip_depth and data:
+            self.parts.append(html_escape(data, quote=False))
+
+    def result(self) -> str:
+        while self.stack:
+            self.parts.append(f"</{self.stack.pop()}>")
+        html = "".join(self.parts)
+        html = re.sub(r'<div class="tt-stats">\s*</div>\s*', "", html)
+        html = re.sub(
+            r'(<div class="tt-stats">.*?</div>)\s*(<br>\s*)*',
+            r"\1",
+            html,
+            count=1,
+            flags=re.DOTALL,
+        )
+        html = re.sub(r'(<strong class="tt-name">.*?</strong>)\s*<br>\s*', r"\1", html)
+        html = re.sub(r"(<br>\s*)+(<strong class=\"tt-name\">)", r"\2", html)
+        html = re.sub(r"(<br>\s*){3,}", "<br><br>", html)
+        return html.strip()
+
+
+def sanitize_tooltip(html: str) -> str:
+    if not html:
+        return ""
+    parser = TooltipSanitizer()
+    parser.feed(html)
+    parser.close()
+    return parser.result()
+
+
+def tooltip_for(maps: dict[str, dict], entry_id: str, field: str) -> dict[str, str]:
+    return {
+        "desc_en": sanitize_tooltip(maps["en"].get(entry_id, {}).get(field, "")),
+        "desc_ko": sanitize_tooltip(maps["ko"].get(entry_id, {}).get(field, "")),
+        "desc_zh_TW": sanitize_tooltip(maps["zh_TW"].get(entry_id, {}).get(field, "")),
+    }
 
 
 def fetch_json(url: str) -> dict:
@@ -193,6 +333,8 @@ def extract_items(payload: dict) -> dict[str, dict]:
             "icon_ref": item["image"]["full"],
             "item_tier": classify_item_tier(item),
             "purchasable": bool(item.get("gold", {}).get("purchasable", True)),
+            "gold_total": int(item.get("gold", {}).get("total") or 0),
+            "description": item.get("description") or "",
             "is_shadow": is_shadow_variant(item_id, all_ids),
             "on_sr": bool(maps.get("11")),
         }
@@ -227,6 +369,7 @@ def extract_runes(payload: list) -> dict[str, dict[str, str]]:
                     "slot": str(slot_index),
                     "slot_order": str(rune_index),
                     "rune_type": "rune",
+                    "longDesc": rune.get("longDesc") or rune.get("shortDesc") or "",
                 }
     return rows
 
@@ -278,7 +421,9 @@ def build_item_rows(version: str, maps: dict[str, dict]) -> list[dict]:
                 "key": info["key"],
                 **names_for(maps, item_id),
                 "item_tier": info.get("item_tier", "basic"),
+                "gold": info.get("gold_total", 0),
                 "icon": icon_url(version, "item", info.get("icon_ref", "")),
+                **tooltip_for(maps, item_id, "description"),
             }
         )
     return dedupe_items(rows)
@@ -318,6 +463,7 @@ def build_rune_rows(version: str, maps: dict[str, dict]) -> list[dict]:
                 "slot": info.get("slot", ""),
                 "slot_order": info.get("slot_order", ""),
                 "icon": icon_url(version, "rune", info.get("icon_ref", "")),
+                **tooltip_for(maps, rune_id, "longDesc"),
             }
         )
     return rows
@@ -342,6 +488,37 @@ def main() -> None:
     item_rows = build_item_rows(version, load_lang_maps(version, "item.json", extract_items))
     spell_rows = build_spell_rows(version, load_lang_maps(version, "summoner.json", extract_summoner_spells))
     rune_rows = build_rune_rows(version, load_lang_maps(version, "runesReforged.json", extract_runes))
+
+    entries = champion_rows + item_rows + spell_rows + rune_rows
+    metadata = {
+        "version": version,
+        "source": "Riot Data Dragon",
+        "updatedAt": utc_now(),
+        "languages": LANGS,
+        "scope": "Summoner's Rift",
+        "files": {
+            "champions": len(champion_rows),
+            "items": len(item_rows),
+            "summoner_spells": len(spell_rows),
+            "runes": len(rune_rows),
+            "combined": len(entries),
+        },
+    }
+    payload = {
+        "version": version,
+        "source": "Riot Data Dragon",
+        "scope": "Summoner's Rift",
+        "updatedAt": metadata["updatedAt"],
+        "languages": LANGS,
+        "counts": metadata["files"],
+        "entries": entries,
+    }
+
+    existing = load_existing_glossary()
+    if existing and data_signature(existing) == data_signature(payload):
+        print(json.dumps({**metadata, "unchanged": True}, ensure_ascii=False, indent=2))
+        print("Glossary data is already up to date.")
+        return
 
     write_csv(
         OUTPUT_DIR / "champions.csv",
@@ -376,45 +553,59 @@ def main() -> None:
         ],
         rune_rows,
     )
-
-    entries = champion_rows + item_rows + spell_rows + rune_rows
-    metadata = {
-        "version": version,
-        "source": "Riot Data Dragon",
-        "updatedAt": utc_now(),
-        "languages": LANGS,
-        "scope": "Summoner's Rift",
-        "files": {
-            "champions": len(champion_rows),
-            "items": len(item_rows),
-            "summoner_spells": len(spell_rows),
-            "runes": len(rune_rows),
-            "combined": len(entries),
-        },
-    }
     (OUTPUT_DIR / "metadata.json").write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-
-    payload = {
-        "version": version,
-        "source": "Riot Data Dragon",
-        "scope": "Summoner's Rift",
-        "updatedAt": metadata["updatedAt"],
-        "languages": LANGS,
-        "counts": metadata["files"],
-        "entries": entries,
-    }
     (WEB_DATA_DIR / "glossary.js").write_text(
         "window.GLOSSARY_DATA = "
         + json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
         + ";\n",
         encoding="utf-8",
     )
+    bump_glossary_cache(version)
 
     print(json.dumps(metadata, ensure_ascii=False, indent=2))
     print(f"Wrote website data to {WEB_DATA_DIR / 'glossary.js'}")
+
+
+def load_existing_glossary() -> dict | None:
+    path = WEB_DATA_DIR / "glossary.js"
+    if not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8").strip()
+    prefix = "window.GLOSSARY_DATA = "
+    if not text.startswith(prefix):
+        return None
+    raw = text[len(prefix) :]
+    if raw.endswith(";"):
+        raw = raw[:-1]
+    return json.loads(raw)
+
+
+def data_signature(payload: dict) -> str:
+    slim = {
+        "version": payload.get("version"),
+        "source": payload.get("source"),
+        "scope": payload.get("scope"),
+        "languages": payload.get("languages"),
+        "counts": payload.get("counts") or payload.get("files"),
+        "entries": payload.get("entries"),
+    }
+    return json.dumps(slim, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def bump_glossary_cache(version: str) -> None:
+    index_path = ROOT_DIR / "docs" / "index.html"
+    html = index_path.read_text(encoding="utf-8")
+    updated, count = re.subn(
+        r'src="data/glossary\.js\?v=[^"]+"',
+        f'src="data/glossary.js?v={version}"',
+        html,
+        count=1,
+    )
+    if count:
+        index_path.write_text(updated, encoding="utf-8")
 
 
 if __name__ == "__main__":
