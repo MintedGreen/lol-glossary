@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = ROOT_DIR / "data"
-WEB_DATA_DIR = ROOT_DIR / "web" / "data"
+WEB_DATA_DIR = ROOT_DIR / "docs" / "data"
 LANGS = {
     "en": "en_US",
     "ko": "ko_KR",

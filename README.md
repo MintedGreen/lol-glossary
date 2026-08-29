@@ -31,7 +31,7 @@ This fetches the latest Data Dragon patch and writes:
 | Output | Purpose |
 | --- | --- |
 | `data/` | CSV lookup tables and metadata |
-| `web/data/glossary.js` | Embedded data loaded by the website |
+| `docs/data/glossary.js` | Embedded data loaded by the website |
 
 Re-run this after each LoL patch, then commit the updated files.
 
@@ -46,7 +46,7 @@ From this folder:
 Or:
 
 ```bash
-python -m http.server 8080 --directory web
+python -m http.server 8080 --directory docs
 ```
 
 Then open [http://localhost:8080](http://localhost:8080).
@@ -55,15 +55,14 @@ If you see `ERR_EMPTY_RESPONSE`, another process may already be using port 8080.
 
 ## Deploy to GitHub Pages
 
-The live site is the `web/` folder.
+GitHub Pages only allows `/` (root) or `/docs` — there is no `/web` option. This site lives in `docs/`.
 
-1. Create a GitHub repository and push this project.
-2. Open **Settings → Pages**.
-3. Set **Source** to **Deploy from a branch**.
-4. Choose branch `main` and folder `/web`.
-5. Save. The site will be at `https://YOUR_USERNAME.github.io/REPO_NAME/`.
+1. Open **Settings → Pages**.
+2. Set **Source** to **Deploy from a branch**.
+3. Branch: `main`. Folder: `/docs`.
+4. Click **Save**. The site will be at `https://mintedgreen.github.io/lol-glossary/`.
 
-After each patch, run `python generate_lol_glossary.py`, commit `web/data/`, and push.
+After each patch, run `python generate_lol_glossary.py`, commit `docs/data/`, and push.
 
 ## Project layout
 
@@ -77,7 +76,7 @@ lol_glossary/
     summoner_spells.csv
     runes.csv
     metadata.json
-  web/
+  docs/
     index.html
     styles.css
     app.js

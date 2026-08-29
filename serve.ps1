@@ -1,5 +1,5 @@
 $port = 8080
-$webDir = Join-Path $PSScriptRoot "web"
+$webDir = Join-Path $PSScriptRoot "docs"
 
 $listeners = netstat -ano | Select-String ":$port\s.*LISTENING"
 if ($listeners) {
