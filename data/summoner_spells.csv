@@ -1,0 +1,10 @@
+﻿category,id,key,en,ko,zh_TW
+summoner_spell,SummonerBarrier,21,Barrier,방어막,光盾
+summoner_spell,SummonerBoost,1,Cleanse,정화,淨化
+summoner_spell,SummonerDot,14,Ignite,점화,點燃
+summoner_spell,SummonerExhaust,3,Exhaust,탈진,虛弱
+summoner_spell,SummonerFlash,4,Flash,점멸,閃現
+summoner_spell,SummonerHaste,6,Ghost,유체화,鬼步
+summoner_spell,SummonerHeal,7,Heal,회복,治療
+summoner_spell,SummonerSmite,11,Smite,강타,重擊
+summoner_spell,SummonerTeleport,12,Teleport,순간이동,傳送

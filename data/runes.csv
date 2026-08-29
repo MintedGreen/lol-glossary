@@ -1,0 +1,63 @@
+﻿category,id,key,en,ko,zh_TW,tree_id,tree_en,tree_ko,tree_zh_TW,slot,slot_order
+rune,8112,8112,Electrocute,감전,死亡電刑,8100,Domination,지배,征服,1,1
+rune,8128,8128,Dark Harvest,어둠의 수확,靈魂收割,8100,Domination,지배,征服,1,2
+rune,9923,9923,Hail of Blades,칼날비,刀鋒之雹,8100,Domination,지배,征服,1,3
+rune,8126,8126,Cheap Shot,비열한 한 방,凌虐,8100,Domination,지배,征服,2,1
+rune,8139,8139,Taste of Blood,피의 맛,血噬,8100,Domination,지배,征服,2,2
+rune,8143,8143,Sudden Impact,돌발 일격,即刻衝擊,8100,Domination,지배,征服,2,3
+rune,8137,8137,Sixth Sense,육감,第六感,8100,Domination,지배,征服,3,1
+rune,8140,8140,Grisly Mementos,섬뜩한 기념품,恐懼紀念物,8100,Domination,지배,征服,3,2
+rune,8141,8141,Deep Ward,깊은 와드,敵後守衛,8100,Domination,지배,征服,3,3
+rune,8135,8135,Treasure Hunter,보물 사냥꾼,寶藏獵人,8100,Domination,지배,征服,4,1
+rune,8105,8105,Relentless Hunter,끈질긴 사냥꾼,殘虐獵人,8100,Domination,지배,征服,4,2
+rune,8106,8106,Ultimate Hunter,궁극의 사냥꾼,終焉獵人,8100,Domination,지배,征服,4,3
+rune,8351,8351,Glacial Augment,빙결 강화,冰川增幅,8300,Inspiration,영감,啟示,1,1
+rune,8360,8360,Unsealed Spellbook,봉인 풀린 주문서,啟封法書,8300,Inspiration,영감,啟示,1,2
+rune,8369,8369,First Strike,선제공격,先發制人,8300,Inspiration,영감,啟示,1,3
+rune,8306,8306,Hextech Flashtraption,마법공학 점멸기,海克斯充能閃現,8300,Inspiration,영감,啟示,2,1
+rune,8304,8304,Magical Footwear,마법의 신발,魔法靈靴,8300,Inspiration,영감,啟示,2,2
+rune,8321,8321,Cash Back,환급,兌現,8300,Inspiration,영감,啟示,2,3
+rune,8313,8313,Triple Tonic,삼중 물약,三倍藥水,8300,Inspiration,영감,啟示,3,1
+rune,8352,8352,Time Warp Tonic,시간 왜곡 물약,時間扭曲藥水,8300,Inspiration,영감,啟示,3,2
+rune,8345,8345,Biscuit Delivery,비스킷 배달,乾糧快遞,8300,Inspiration,영감,啟示,3,3
+rune,8347,8347,Cosmic Insight,우주적 통찰력,銀河視界,8300,Inspiration,영감,啟示,4,1
+rune,8410,8410,Approach Velocity,쾌속 접근,斗轉星移,8300,Inspiration,영감,啟示,4,2
+rune,8316,8316,Jack Of All Trades,다재다능,萬事通,8300,Inspiration,영감,啟示,4,3
+rune,8005,8005,Press the Attack,집중 공격,強攻,8000,Precision,정밀,精準,1,1
+rune,8008,8008,Lethal Tempo,치명적 속도,致命節奏,8000,Precision,정밀,精準,1,2
+rune,8021,8021,Fleet Footwork,기민한 발놀림,瞬疾步法,8000,Precision,정밀,精準,1,3
+rune,8010,8010,Conqueror,정복자,征服者,8000,Precision,정밀,精準,1,4
+rune,9101,9101,Absorb Life,생명 흡수,吸取生命,8000,Precision,정밀,精準,2,1
+rune,9111,9111,Triumph,승전보,凱旋,8000,Precision,정밀,精準,2,2
+rune,8009,8009,Presence of Mind,침착,氣定神閒,8000,Precision,정밀,精準,2,3
+rune,9104,9104,Legend: Alacrity,전설: 민첩함,傳奇：敏捷,8000,Precision,정밀,精準,3,1
+rune,9105,9105,Legend: Haste,전설: 가속,傳奇：疾速,8000,Precision,정밀,精準,3,2
+rune,9103,9103,Legend: Bloodline,전설: 핏빛 길,傳奇：血脈,8000,Precision,정밀,精準,3,3
+rune,8014,8014,Coup de Grace,최후의 일격,致命一擊,8000,Precision,정밀,精準,4,1
+rune,8017,8017,Cut Down,체력차 극복,斬殺,8000,Precision,정밀,精準,4,2
+rune,8299,8299,Last Stand,최후의 저항,背水一戰,8000,Precision,정밀,精準,4,3
+rune,8437,8437,Grasp of the Undying,착취의 손아귀,不死之握,8400,Resolve,결의,意志,1,1
+rune,8439,8439,Aftershock,여진,裂地衝擊,8400,Resolve,결의,意志,1,2
+rune,8465,8465,Guardian,수호자,神聖守護,8400,Resolve,결의,意志,1,3
+rune,8446,8446,Demolish,철거,爆破,8400,Resolve,결의,意志,2,1
+rune,8463,8463,Font of Life,생명의 샘,生命之泉,8400,Resolve,결의,意志,2,2
+rune,8401,8401,Shield Bash,보호막 강타,盾擊,8400,Resolve,결의,意志,2,3
+rune,8429,8429,Conditioning,사전 준비,調節,8400,Resolve,결의,意志,3,1
+rune,8444,8444,Second Wind,재생의 바람,回春,8400,Resolve,결의,意志,3,2
+rune,8473,8473,Bone Plating,뼈 방패,骨甲,8400,Resolve,결의,意志,3,3
+rune,8451,8451,Overgrowth,과잉성장,過度生長,8400,Resolve,결의,意志,4,1
+rune,8453,8453,Revitalize,소생,甦醒,8400,Resolve,결의,意志,4,2
+rune,8242,8242,Unflinching,불굴의 의지,堅毅,8400,Resolve,결의,意志,4,3
+rune,8214,8214,Summon Aery,콩콩이 소환,召喚艾莉,8200,Sorcery,마법,巫術,1,1
+rune,8229,8229,Arcane Comet,신비로운 유성,奧術彗星,8200,Sorcery,마법,巫術,1,2
+rune,8230,8230,Stormraider's Surge,폭풍전사의 포효,風暴浪湧,8200,Sorcery,마법,巫術,1,3
+rune,8992,8992,Deathfire Touch,죽음불꽃 손길,冥火之觸,8200,Sorcery,마법,巫術,1,4
+rune,8224,8224,Axiom Arcanist,액시옴 비전 마법사,公理奧術大師,8200,Sorcery,마법,巫術,2,1
+rune,8226,8226,Manaflow Band,마나순환 팔찌,附魔之帶,8200,Sorcery,마법,巫術,2,2
+rune,8275,8275,Nimbus Cloak,빛의 망토,光輝披風,8200,Sorcery,마법,巫術,2,3
+rune,8210,8210,Transcendence,깨달음,卓越,8200,Sorcery,마법,巫術,3,1
+rune,8234,8234,Celerity,기민함,迅捷,8200,Sorcery,마법,巫術,3,2
+rune,8233,8233,Absolute Focus,절대 집중,絕對專注,8200,Sorcery,마법,巫術,3,3
+rune,8237,8237,Scorch,주문 작열,焦灼,8200,Sorcery,마법,巫術,4,1
+rune,8232,8232,Waterwalking,물 위를 걷는 자,水行者,8200,Sorcery,마법,巫術,4,2
+rune,8236,8236,Gathering Storm,폭풍의 결집,暴風凝聚,8200,Sorcery,마법,巫術,4,3

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LoL Glossary · EN / KO / 台灣中文</title>
+    <link rel="stylesheet" href="styles.css?v=20260829e" />
+  </head>
+  <body class="landing">
+    <div class="page">
+      <header class="header">
+        <div class="header-top">
+          <div>
+            <h1>LoL Glossary</h1>
+            <p class="subtitle">English · Korean · 繁體中文 · Summoner's Rift</p>
+          </div>
+          <div class="meta-card">
+            <span class="meta-label">Patch</span>
+            <span id="patch-version" class="meta-value">—</span>
+          </div>
+        </div>
+
+        <div class="search-row">
+          <label class="search-field" for="search-input">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input
+              id="search-input"
+              type="search"
+              placeholder="Search English, Korean, 中文, or id…"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </label>
+          <button id="clear-search" type="button" class="ghost-button">Clear</button>
+        </div>
+
+        <nav id="category-tabs" class="tabs" aria-label="Categories"></nav>
+      </header>
+
+      <main class="main">
+        <div id="results-bar" class="results-bar">
+          <p id="results-summary">Loading glossary…</p>
+        </div>
+
+        <section id="champion-view" class="champion-view hidden" aria-label="Champions">
+          <div id="champion-grid" class="champion-grid"></div>
+          <div id="champion-detail" class="champion-detail hidden"></div>
+        </section>
+
+        <section id="item-view" class="item-view hidden" aria-label="Items">
+          <nav id="item-tier-tabs" class="item-tier-tabs" aria-label="Item tiers"></nav>
+          <div id="item-grid" class="item-grid"></div>
+          <div id="item-detail" class="item-detail hidden"></div>
+        </section>
+
+        <section id="summoner-view" class="summoner-view hidden" aria-label="Summoner Spells">
+          <div id="summoner-grid" class="summoner-grid"></div>
+          <div id="summoner-detail" class="summoner-detail hidden"></div>
+        </section>
+
+        <section id="rune-view" class="rune-view hidden" aria-label="Runes">
+          <div id="rune-groups" class="rune-groups"></div>
+          <div id="rune-detail" class="rune-detail hidden"></div>
+        </section>
+
+        <div id="table-wrap" class="table-wrap">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th scope="col">Category</th>
+                <th scope="col"><span class="sr-only">Icon</span></th>
+                <th scope="col">English</th>
+                <th scope="col">Korean</th>
+                <th scope="col">台灣中文</th>
+                <th scope="col"><span class="sr-only">Copy</span></th>
+              </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+          </table>
+        </div>
+
+        <div id="results-cards" class="results-cards" aria-live="polite"></div>
+
+        <p id="empty-state" class="empty-state hidden">No matches found.</p>
+      </main>
+
+      <footer class="footer">
+        <p>
+          Data from
+          <a href="https://developer.riotgames.com/docs/lol" target="_blank" rel="noreferrer">Riot Data Dragon</a>.
+        </p>
+      </footer>
+    </div>
+
+    <template id="row-template">
+      <tr>
+        <td><span class="chip"></span></td>
+        <td>
+          <img class="entry-icon" alt="" loading="lazy" width="48" height="48" />
+        </td>
+        <td><span class="primary-text en"></span></td>
+        <td><span class="primary-text ko"></span></td>
+        <td><span class="primary-text zh"></span></td>
+        <td>
+          <button type="button" class="copy-button">Copy</button>
+        </td>
+      </tr>
+    </template>
+
+    <template id="champion-tile-template">
+      <button type="button" class="champion-tile">
+        <img class="champion-tile-icon" alt="" loading="lazy" width="60" height="60" />
+      </button>
+    </template>
+
+    <template id="champion-detail-template">
+      <article class="champion-detail-card">
+        <button type="button" class="champion-detail-close" aria-label="Close">×</button>
+        <div class="champion-detail-header">
+          <img class="champion-detail-icon" alt="" width="48" height="48" />
+          <div class="champion-detail-heading">
+            <h2 class="champion-detail-title en"></h2>
+            <p class="champion-detail-subtitle">
+              <span class="ko"></span>
+              <span class="sep">·</span>
+              <span class="zh"></span>
+            </p>
+          </div>
+        </div>
+        <section class="champion-spells">
+          <h3 class="champion-spells-title">Abilities</h3>
+          <div class="champion-spells-list"></div>
+        </section>
+        <button type="button" class="copy-button">Copy</button>
+      </article>
+    </template>
+
+    <template id="item-tile-template">
+      <button type="button" class="item-tile">
+        <img class="item-tile-icon" alt="" loading="lazy" width="48" height="48" />
+      </button>
+    </template>
+
+    <template id="item-detail-template">
+      <article class="item-detail-card">
+        <button type="button" class="item-detail-close" aria-label="Close">×</button>
+        <div class="item-detail-header">
+          <img class="item-detail-icon" alt="" width="48" height="48" />
+          <div class="item-detail-heading">
+            <h2 class="item-detail-title en"></h2>
+            <p class="item-detail-subtitle">
+              <span class="ko"></span>
+              <span class="sep">·</span>
+              <span class="zh"></span>
+            </p>
+          </div>
+        </div>
+        <button type="button" class="copy-button">Copy</button>
+      </article>
+    </template>
+
+    <template id="summoner-tile-template">
+      <button type="button" class="summoner-tile">
+        <img class="summoner-tile-icon" alt="" loading="lazy" width="48" height="48" />
+      </button>
+    </template>
+
+    <template id="summoner-detail-template">
+      <article class="summoner-detail-card">
+        <button type="button" class="summoner-detail-close" aria-label="Close">×</button>
+        <div class="summoner-detail-header">
+          <img class="summoner-detail-icon" alt="" width="48" height="48" />
+          <div class="summoner-detail-heading">
+            <h2 class="summoner-detail-title en"></h2>
+            <p class="summoner-detail-subtitle">
+              <span class="ko"></span>
+              <span class="sep">·</span>
+              <span class="zh"></span>
+            </p>
+          </div>
+        </div>
+        <button type="button" class="copy-button">Copy</button>
+      </article>
+    </template>
+
+    <template id="rune-tile-template">
+      <button type="button" class="rune-tile">
+        <img class="rune-tile-icon" alt="" loading="lazy" width="40" height="40" />
+      </button>
+    </template>
+
+    <template id="rune-detail-template">
+      <article class="rune-detail-card">
+        <button type="button" class="rune-detail-close" aria-label="Close">×</button>
+        <div class="rune-detail-header">
+          <img class="rune-detail-icon" alt="" width="48" height="48" />
+          <div class="rune-detail-heading">
+            <h2 class="rune-detail-title en"></h2>
+            <p class="rune-detail-subtitle">
+              <span class="ko"></span>
+              <span class="sep">·</span>
+              <span class="zh"></span>
+            </p>
+          </div>
+        </div>
+        <button type="button" class="copy-button">Copy</button>
+      </article>
+    </template>
+
+    <template id="card-template">
+      <article class="result-card">
+        <div class="card-line">
+          <span class="chip"></span>
+          <img class="entry-icon" alt="" loading="lazy" width="48" height="48" />
+          <p class="card-names">
+            <span class="en"></span>
+            <span class="sep">·</span>
+            <span class="ko"></span>
+            <span class="sep">·</span>
+            <span class="zh"></span>
+          </p>
+          <button type="button" class="copy-button">Copy</button>
+        </div>
+      </article>
+    </template>
+
+    <script src="data/glossary.js?v=20260829d"></script>
+    <script src="app.js?v=20260829e"></script>
+  </body>
+</html>

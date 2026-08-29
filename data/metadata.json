@@ -1,0 +1,18 @@
+{
+  "version": "16.17.1",
+  "source": "Riot Data Dragon",
+  "updatedAt": "2026-08-29T15:08:42Z",
+  "languages": {
+    "en": "en_US",
+    "ko": "ko_KR",
+    "zh_TW": "zh_TW"
+  },
+  "scope": "Summoner's Rift",
+  "files": {
+    "champions": 173,
+    "items": 222,
+    "summoner_spells": 9,
+    "runes": 62,
+    "combined": 466
+  }
+}
